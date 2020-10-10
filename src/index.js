@@ -1,32 +1,8 @@
 const { router, text } = require('bottender/router');
 const axios = require('axios');
-async function setState(context, { match }) {
-  const token = match.groups.token;
-  let id = '';
 
-  if (context._session.user) {
-    id = context._session.user.id;
-  } else if (context._session.group) {
-    id = context._session.group.id;
-  } else if (context._session.room) {
-    id = context._session.room.id;
-  }
-  context.setState({
-    id: { token },
-  });
-  const url = 'https://api.line.me/v2/bot/channel/webhook/endpoint';
-  const headers = {
-    Authorization: `Bearer ${process.env.LINE_ACCESS_TOKEN}`,
-    'Content-Type': 'application/json',
-  };
-  const res = await axios.get(url, { headers });
-  console.log(res.data);
-  await context.sendText(
-    `Welcome ${id}\n ${res.data.endpoint} \n ${res.data.active}`
-  );
-}
-async function testAction(context) {
-  await context.sendFlex('hi', {
+function completeAction(text) {
+  return {
     type: 'bubble',
     hero: {
       type: 'image',
@@ -47,146 +23,96 @@ async function testAction(context) {
       contents: [
         {
           type: 'text',
-          text: 'Brown Cafe',
+          text,
           weight: 'bold',
           size: 'xl',
-        },
-        {
-          type: 'box',
-          layout: 'baseline',
-          margin: 'md',
-          contents: [
-            {
-              type: 'icon',
-              size: 'sm',
-              url:
-                'https://scdn.line-apps.com/n/channel_devcenter/img/fx/review_gold_star_28.png',
-            },
-            {
-              type: 'icon',
-              size: 'sm',
-              url:
-                'https://scdn.line-apps.com/n/channel_devcenter/img/fx/review_gold_star_28.png',
-            },
-            {
-              type: 'icon',
-              size: 'sm',
-              url:
-                'https://scdn.line-apps.com/n/channel_devcenter/img/fx/review_gold_star_28.png',
-            },
-            {
-              type: 'icon',
-              size: 'sm',
-              url:
-                'https://scdn.line-apps.com/n/channel_devcenter/img/fx/review_gold_star_28.png',
-            },
-            {
-              type: 'icon',
-              size: 'sm',
-              url:
-                'https://scdn.line-apps.com/n/channel_devcenter/img/fx/review_gray_star_28.png',
-            },
-            {
-              type: 'text',
-              text: '4.0',
-              size: 'sm',
-              color: '#999999',
-              margin: 'md',
-              flex: 0,
-            },
-          ],
-        },
-        {
-          type: 'box',
-          layout: 'vertical',
-          margin: 'lg',
-          spacing: 'sm',
-          contents: [
-            {
-              type: 'box',
-              layout: 'baseline',
-              spacing: 'sm',
-              contents: [
-                {
-                  type: 'text',
-                  text: 'Place',
-                  color: '#aaaaaa',
-                  size: 'sm',
-                  flex: 1,
-                },
-                {
-                  type: 'text',
-                  text: 'Miraina Tower, 4-1-6 Shinjuku, Tokyo',
-                  wrap: true,
-                  color: '#666666',
-                  size: 'sm',
-                  flex: 5,
-                },
-              ],
-            },
-            {
-              type: 'box',
-              layout: 'baseline',
-              spacing: 'sm',
-              contents: [
-                {
-                  type: 'text',
-                  text: 'Time',
-                  color: '#aaaaaa',
-                  size: 'sm',
-                  flex: 1,
-                },
-                {
-                  type: 'text',
-                  text: '10:00 - 23:00',
-                  wrap: true,
-                  color: '#666666',
-                  size: 'sm',
-                  flex: 5,
-                },
-              ],
-            },
-          ],
+          wrap: true,
         },
       ],
     },
-    footer: {
-      type: 'box',
-      layout: 'vertical',
-      spacing: 'sm',
-      contents: [
-        {
-          type: 'button',
-          style: 'link',
-          height: 'sm',
-          action: {
-            type: 'uri',
-            label: 'CALL',
-            uri: 'https://linecorp.com',
-          },
-        },
-        {
-          type: 'button',
-          style: 'link',
-          height: 'sm',
-          action: {
-            type: 'uri',
-            label: 'WEBSITE',
-            uri: 'https://linecorp.com',
-          },
-        },
-        {
-          type: 'spacer',
-          size: 'sm',
-        },
-      ],
-      flex: 0,
-    },
-  });
+  };
+}
+async function setBotState(context, { match }) {
+  const token = match.groups.token;
+  let id = '';
+  const state = context.state;
+
+  if (context._session.group) {
+    id = context._session.group.id;
+  } else if (context._session.room) {
+    id = context._session.room.id;
+  } else if (context._session.user) {
+    id = context._session.user.id;
+  }
+  state[id] = { token };
+  context.setState(state);
+
+  await context.sendText(`${id} 
+set 
+${token} 
+success.`);
+}
+async function putWebhookUrl(context, { match }) {
+  const endpoint = match.groups.endpoint;
+
+  let id = '';
+  if (context._session.group) {
+    id = context._session.group.id;
+  } else if (context._session.room) {
+    id = context._session.room.id;
+  } else if (context._session.user) {
+    id = context._session.user.id;
+  }
+  const obj = context.state[id];
+  if (!obj) await context.sendText('Please set your channel!');
+  else {
+    const url = 'https://api.line.me/v2/bot/channel/webhook/endpoint';
+    const headers = {
+      Authorization: `Bearer ${obj.token}`,
+      'Content-Type': 'application/json',
+    };
+    try {
+      await axios.put(url, { endpoint }, { headers });
+      await context.sendText(`${endpoint} set ok!`);
+    } catch (error) {
+      await context.sendText(error);
+    }
+  }
+}
+async function getBotState(context) {
+  let id = '';
+  if (context._session.group) {
+    id = context._session.group.id;
+  } else if (context._session.room) {
+    id = context._session.room.id;
+  } else if (context._session.user) {
+    id = context._session.user.id;
+  }
+  const obj = context.state[id];
+  if (!obj) await context.sendText('Please set your channel.');
+  else {
+    const url = 'https://api.line.me/v2/bot/channel/webhook/endpoint';
+    const headers = {
+      Authorization: `Bearer ${obj.token}`,
+      'Content-Type': 'application/json',
+    };
+    try {
+      const res = await axios.get(url, { headers });
+
+      await context.sendFlex(
+        'Result',
+        completeAction(`${res.data.endpoint}
+${res.data.active}`)
+      );
+    } catch (error) {
+      await context.sendText(`${error}`);
+    }
+  }
 }
 module.exports = async function App() {
   return router([
-    text(/set\s*(?<token>[\s\S]+)/, setState),
-    text('a', testAction),
+    text(/set\s*(?<token>[\s\S]+)/, setBotState),
+    text('get', getBotState),
+    text(/url\s*(?<endpoint>[\s\S]+)/, putWebhookUrl),
   ]);
 };
