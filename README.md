@@ -1,7 +1,8 @@
 # Webhooker
 
-This project was bootstrapped with
-[Bottender](https://github.com/Yoctol/bottender) init script.
+Webhooker is implemented for [LINE webhook API](https://developers.line.biz/en/news/2020/10/06/messaging-api-update-october-2020/).
+
+> Group/Room/User id is saved in memory currently, refresh or sleep(e.g. Heroku) will be clean.
 
 ## Environment variables
 
