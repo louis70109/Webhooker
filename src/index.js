@@ -4,23 +4,29 @@ const axios = require('axios');
 function completeAction(text) {
   return {
     type: 'bubble',
-    hero: {
-      type: 'image',
-      url:
-        'https://raw.githubusercontent.com/louis70109/Webhooker/master/sample.png',
-      size: 'full',
-      aspectRatio: '20:13',
-      aspectMode: 'cover',
-      action: {
-        type: 'uri',
-        uri: 'http://linecorp.com/',
-      },
-      animated: true,
-    },
     body: {
       type: 'box',
       layout: 'vertical',
       contents: [
+        {
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'image',
+              url:
+                'https://raw.githubusercontent.com/louis70109/Webhooker/master/sample.png',
+              aspectMode: 'fit',
+              animated: true,
+            },
+          ],
+          background: {
+            type: 'linearGradient',
+            angle: '45deg',
+            startColor: '#FFFF00',
+            endColor: '#0080ff',
+          },
+        },
         {
           type: 'text',
           text,
@@ -102,7 +108,7 @@ async function getBotState(context) {
       await context.sendFlex(
         'Result',
         completeAction(`${res.data.endpoint}
-${res.data.active}`)
+Webhook status: ${res.data.active}`)
       );
     } catch (error) {
       await context.sendText(`${error}`);
