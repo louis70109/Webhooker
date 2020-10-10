@@ -38,6 +38,70 @@ function completeAction(text) {
     },
   };
 }
+async function getBotInfo(context) {
+  let id = '';
+  if (context._session.group) {
+    id = context._session.group.id;
+  } else if (context._session.room) {
+    id = context._session.room.id;
+  } else if (context._session.user) {
+    id = context._session.user.id;
+  }
+  const obj = context.state[id];
+  if (!obj) await context.sendText('Please set your channel.');
+  else {
+    const url = 'https://api.line.me/v2/bot/info';
+    const headers = {
+      Authorization: `Bearer ${obj.token}`,
+      'Content-Type': 'application/json',
+    };
+    try {
+      const res = await axios.get(url, { headers });
+
+      await context.sendFlex(
+        'Result',
+        completeAction(`${JSON.stringify(res.data)}`)
+      );
+    } catch (error) {
+      await context.sendText(`${error}`);
+    }
+  }
+}
+async function verifyWebhookUrl(context) {
+  let id = '';
+  if (context._session.group) {
+    id = context._session.group.id;
+  } else if (context._session.room) {
+    id = context._session.room.id;
+  } else if (context._session.user) {
+    id = context._session.user.id;
+  }
+  const obj = context.state[id];
+  if (!obj) await context.sendText('Please set your channel.');
+  else {
+    try {
+      const getUrl = 'https://api.line.me/v2/bot/channel/webhook/endpoint';
+      const headers = {
+        Authorization: `Bearer ${obj.token}`,
+        'Content-Type': 'application/json',
+      };
+      const res = await axios.get(getUrl, { headers });
+      const verifyUrl = 'https://api.line.me/v2/bot/channel/webhook/test';
+      const verifyRes = await axios.post(
+        verifyUrl,
+        { endpoint: res.data.endpoint },
+        { headers }
+      );
+
+      await context.sendFlex(
+        'Result',
+        completeAction(`${JSON.stringify(verifyRes.data)}`)
+      );
+    } catch (error) {
+      await context.sendText(`${error}`);
+    }
+  }
+}
 async function setBotState(context, { match }) {
   const token = match.groups.token;
   let id = '';
@@ -155,5 +219,6 @@ module.exports = async function App() {
     text('get', getBotState),
     text('verify', verifyWebhookUrl),
     text(/url\s*(?<endpoint>[\s\S]+)/, putWebhookUrl),
+    text('now', getBotInfo),
   ]);
 };
