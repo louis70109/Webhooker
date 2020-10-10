@@ -20,9 +20,7 @@ module.exports = {
       },
     },
   },
-  initialState: {
-    token: '',
-  },
+  initialState: {},
   channels: {
     line: {
       enabled: true,
