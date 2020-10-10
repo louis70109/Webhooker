@@ -107,8 +107,42 @@ async function getBotState(context) {
 
       await context.sendFlex(
         'Result',
-        completeAction(`${res.data.endpoint}
-Webhook status: ${res.data.active}`)
+        completeAction(`${JSON.stringify(res.data)}`)
+      );
+    } catch (error) {
+      await context.sendText(`${error}`);
+    }
+  }
+}
+async function verifyWebhookUrl(context) {
+  let id = '';
+  if (context._session.group) {
+    id = context._session.group.id;
+  } else if (context._session.room) {
+    id = context._session.room.id;
+  } else if (context._session.user) {
+    id = context._session.user.id;
+  }
+  const obj = context.state[id];
+  if (!obj) await context.sendText('Please set your channel.');
+  else {
+    try {
+      const getUrl = 'https://api.line.me/v2/bot/channel/webhook/endpoint';
+      const headers = {
+        Authorization: `Bearer ${obj.token}`,
+        'Content-Type': 'application/json',
+      };
+      const res = await axios.get(getUrl, { headers });
+      const verifyUrl = 'https://api.line.me/v2/bot/channel/webhook/test';
+      const verifyRes = await axios.post(
+        verifyUrl,
+        { endpoint: res.data.endpoint },
+        { headers }
+      );
+
+      await context.sendFlex(
+        'Result',
+        completeAction(`${JSON.stringify(verifyRes.data)}`)
       );
     } catch (error) {
       await context.sendText(`${error}`);
@@ -119,6 +153,7 @@ module.exports = async function App() {
   return router([
     text(/set\s*(?<token>[\s\S]+)/, setBotState),
     text('get', getBotState),
+    text('verify', verifyWebhookUrl),
     text(/url\s*(?<endpoint>[\s\S]+)/, putWebhookUrl),
   ]);
 };
