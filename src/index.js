@@ -15,7 +15,7 @@ function completeAction(text) {
             {
               type: 'image',
               url:
-                'https://raw.githubusercontent.com/louis70109/Webhooker/master/sample.png',
+                'https://s3-ap-southeast-1.amazonaws.com/image.nijia.lin/ezgif.com-gif-maker+(1).png',
               aspectMode: 'fit',
               animated: true,
             },
