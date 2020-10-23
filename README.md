@@ -46,3 +46,7 @@ yarn start
 - git push heroku master.
 - Set your Channel's `LINE_ACCESS_TOKEN` and `LINE_CHANNEL_SECRET` into `Settings`➡️ `Reveal Config Vars`.
 - Enjoy it!
+
+## License
+
+MIT
